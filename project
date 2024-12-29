@@ -1,0 +1,52 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+from openpyxl import Workbook
+
+# Function to fetch and parse webpage content
+def get_faculty_info(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    faculty_info = []
+    
+    # Example: scrape all professors from the page
+    professors = soup.find_all('div', class_='faculty-info')  # Adjust based on actual structure
+    
+    for professor in professors:
+        name = professor.find('h3').get_text(strip=True)
+        email = professor.find('a', href=True)  # Email might be in <a> tag
+        email = email['href'].replace('mailto:', '') if email else None
+        university = "University Name Here"  # Replace with actual university logic
+
+        # Check if the professor's research interests match the desired topics
+        research_interests = professor.find('p', class_='research-interests').get_text(strip=True)
+        keywords = ['machining', 'additive manufacturing', 'composite materials', 'machine learning']
+        
+        if any(keyword in research_interests.lower() for keyword in keywords):
+            faculty_info.append({
+                'Name': name,
+                'Email': email,
+                'University': university,
+                'Research Interests': research_interests
+            })
+
+    return faculty_info
+
+# List of university URLs (example, replace with actual URLs from ranked universities)
+university_urls = [
+    'https://www.university1.edu/faculty',
+    'https://www.university2.edu/faculty',
+    # Add more URLs from universities ranked 200-1500
+]
+
+# Collect faculty information
+all_faculty_info = []
+for url in university_urls:
+    all_faculty_info.extend(get_faculty_info(url))
+
+# Save data to Excel
+df = pd.DataFrame(all_faculty_info)
+df.to_excel('faculty_list.xlsx', index=False)
+
+print("Data saved to 'faculty_list.xlsx'")
